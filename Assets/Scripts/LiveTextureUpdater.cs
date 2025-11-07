@@ -2,6 +2,9 @@
 {
     private void Update()
     {
-        SetTexture(App.Instance.ActiveGesture.Texture);
+        if (App.Instance.ActiveGesture != null)
+        {
+            SetTexture(App.Instance.ActiveGesture.Texture);
+        }
     }
 }

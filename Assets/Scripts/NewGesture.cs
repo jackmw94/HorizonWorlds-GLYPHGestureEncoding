@@ -1,33 +1,22 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
-
-public class NewGesture : MonoBehaviour
+﻿public class NewGesture : ButtonBehaviour
 {
-    [SerializeField] private Button button;
-
-    private void Awake()
+    protected override void OnClicked()
     {
-        button.onClick.AddListener(OnClick);
+        CreateNewGesture(true);
     }
 
-    private void OnDestroy()
+    public static void CreateNewGesture(bool canCancel)
     {
-        button.onClick.RemoveListener(OnClick);
-    }
-
-    private void OnClick()
-    {
-        CreateNewGesture();
-    }
-
-    public static void CreateNewGesture()
-    {
-        NameInputOverlay.Instance.ShowNameRequest(newGestureName =>
+        NameInputOverlay.Instance.ShowNameRequest("Enter a name for the new gesture: ", canCancel, (success, newGestureName) =>
         {
+            if (!success) return;
+            
             Gesture gesture = new(newGestureName);
+            gesture.Initialise();
+            
             GestureContainer.Instance.gestures.Add(gesture);
 
-            AppView.Instance.ActiveGesture = gesture;
+            App.Instance.ActiveGesture = gesture;
         });
     }
 }

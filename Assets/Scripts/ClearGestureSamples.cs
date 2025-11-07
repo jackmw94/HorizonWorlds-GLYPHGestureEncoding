@@ -1,7 +1,12 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
-
-public class ClearGestureSamples : MonoBehaviour
+﻿public class ClearGestureSamples : ButtonBehaviour
 {
-    [SerializeField] private Button button;
+    protected override void OnClicked()
+    {
+        App.Instance.ActiveGesture.Clear();
+    }
+
+    private void Update()
+    {
+        button.interactable = GestureContainer.Instance.gestures.Count > 0;
+    }
 }

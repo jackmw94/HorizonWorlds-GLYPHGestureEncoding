@@ -1,16 +1,20 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class ModeMenu : MonoBehaviour
 {
-    [SerializeField] private ToggleGroup toggleGroup;
-    [SerializeField] private Toggle[] toggles;
-
+    [SerializeField] private Toggle creationToggle;
+    [SerializeField] private GameObject creationObject;
+    [SerializeField] private Toggle testToggle;
+    [SerializeField] private GameObject testObject;
+    
     private void Awake()
     {
-        foreach (Toggle toggle in toggles)
-        {
-            toggleGroup.RegisterToggle(toggle);
-        }
+        creationToggle.onValueChanged.AddListener(isOn => creationObject.SetActive(isOn));
+        testToggle.onValueChanged.AddListener(isOn => testObject.SetActive(isOn));
+        
+        creationObject.SetActive(creationToggle.isOn);
+        testObject.SetActive(testToggle.isOn);
     }
 }

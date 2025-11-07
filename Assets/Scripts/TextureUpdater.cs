@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class TextureUpdater : MonoBehaviour
@@ -13,5 +14,6 @@ public class TextureUpdater : MonoBehaviour
     public void SetTexture(Texture2D texture2D)
     {
         rawImage.texture = texture2D;
+        rawImage.color = texture2D ? Color.white : Color.clear;
     }
 }

@@ -1,67 +1,77 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 public static class GestureDataUtilities
 {
-    public static Vector2 ToVector2(this Vector2Int vector2Int)
+    public static float ScoreGesture_ProgressComp(GestureSample inputGesture, GestureSample templateGesture, string templateName)
     {
-        return new Vector2(vector2Int.x, vector2Int.y);
-    }
+        float totalScore = 0f;
+        Vector2[] templatePositions = (templateGesture.positions);
 
-    public static Vector2Int ToVector2Int(this Vector2 vector2)
-    {
-        return new Vector2Int(Mathf.RoundToInt(vector2.x), Mathf.RoundToInt(vector2.y));
+        StringBuilder scoreRecord = new();
+        
+        for (int index = 0; index < inputGesture.positions.Length; index++)
+        {
+            Vector2 inputPosition = inputGesture.positions[index];
+
+            float progress = index / (inputGesture.positions.Length - 1f);
+            Vector2 comparativeTemplatePosition = GetPositionAtProgress(templatePositions, progress);
+            float score = Vector2.Distance(comparativeTemplatePosition, inputPosition);
+            totalScore += score;
+
+            scoreRecord.Append($"Progress Comp ({templateName}): [{index}] {inputPosition} comparing to progress point {comparativeTemplatePosition} with score {score}. Total score = {totalScore}\n");
+        }
+
+        totalScore /= inputGesture.positions.Length;
+        Logger.Log($"Final progress ({templateName}) comp score: {totalScore}\n{scoreRecord}", LogType.Scoring);
+        
+        return totalScore;
     }
     
-    public static Vector2Int[] Combine(GestureSample[] gestureSamples)
+    public static float ScoreGesture_DistanceComp(GestureSample inputGesture, GestureSample templateGesture, string templateName)
     {
-        int size = gestureSamples.Max(p => p.positions.Length);
+        float totalScore = 0f;
+        StringBuilder scoreRecord = new();
+
+        for (int index = 0; index < inputGesture.positions.Length; index++)
+        {
+            Vector2 inputPosition = inputGesture.positions[index];
+            GetDistanceToGesture(inputPosition, templateGesture, out float distanceToGesture, out _);
+            totalScore += distanceToGesture;
+            
+            scoreRecord.Append($"Distance Comp ({templateName}): [{index}] {inputPosition} has distance to gesture of {distanceToGesture}\n");
+        }
+
+        totalScore /= inputGesture.positions.Length;
+        Logger.Log($"Final distance ({templateName}) comp score: {totalScore}\n{scoreRecord}", LogType.Scoring);
         
-
-        List<Vector2> list1 = Expand(positions1.Select(p => new Vector2(p.x, p.y)).ToArray(), size);
-        List<Vector2> list2 = Expand(positions2.Select(p => new Vector2(p.x, p.y)).ToArray(), size);
-
-        Vector2Int[] results = new Vector2Int[size];
-        for (int i = 0; i < size; i++)
-        {
-            Vector2 combinedPosition = Vector2.Lerp(list1[i], list2[i], 0.5f);
-            results[i] = new Vector2Int(Mathf.RoundToInt(combinedPosition.x), Mathf.RoundToInt(combinedPosition.y));
-        }
-
-        return results.Distinct().ToArray();;
+        return totalScore;
     }
-    public static Vector2Int[] Combine(Vector2Int[] positions1, Vector2Int[] positions2)
+
+    public static void GetDistanceToGesture(Vector2 coordinate, GestureSample gesture, out float minGestureDistance, out float atGestureProgress)
     {
-        int size = Mathf.Max(positions1.Length, positions2.Length);
-
-        List<Vector2> list1 = Expand(positions1.Select(p => new Vector2(p.x, p.y)).ToArray(), size);
-        List<Vector2> list2 = Expand(positions2.Select(p => new Vector2(p.x, p.y)).ToArray(), size);
-
-        Vector2Int[] results = new Vector2Int[size];
-        for (int i = 0; i < size; i++)
-        {
-            Vector2 combinedPosition = Vector2.Lerp(list1[i], list2[i], 0.5f);
-            results[i] = new Vector2Int(Mathf.RoundToInt(combinedPosition.x), Mathf.RoundToInt(combinedPosition.y));
-        }
-
-        return results.Distinct().ToArray();;
-    }
-    
-    public static List<Vector2> Expand(Vector2[] originals, int newSize)
-    {
-        List<Vector2> resampled = new();
+        minGestureDistance = float.MaxValue;
+        int minDistanceIndex = -1;
         
-        for (int i = 0; i < newSize; i++)
+        Vector2[] gesturePositions = gesture.positions;
+
+        for (int index = 0; index < gesturePositions.Length; index++)
         {
-            float progress = i / (newSize - 1f);
-            resampled.Add(GetProgress(originals, progress));
+            Vector2 gestureCoordinate = gesturePositions[index];
+            float coordinateDistance = Vector2.Distance(coordinate, gestureCoordinate);
+            if (coordinateDistance < minGestureDistance)
+            {
+                minGestureDistance = coordinateDistance;
+                minDistanceIndex = index;
+            }
         }
 
-        return resampled;
+        atGestureProgress = minDistanceIndex / (float)gesturePositions.Length;
     }
 
-    private static Vector2 GetProgress(Vector2[] positions, float progress)
+    private static Vector2 GetPositionAtProgress(Vector2[] positions, float progress)
     {
         int numPositions = positions.Length;
         
@@ -79,7 +89,60 @@ public static class GestureDataUtilities
         Vector2 upperValue = positions[upperIndex];
         return Vector2.Lerp(lowerValue, upperValue, progressBetweenPoints);
     }
-    
+
+    public static Vector2 ToVector2(this Vector2Int vector2Int)
+    {
+        return new Vector2(vector2Int.x, vector2Int.y);
+    }
+
+    public static Vector2Int ToVector2Int(this Vector2 vector2)
+    {
+        return new Vector2Int(Mathf.RoundToInt(vector2.x), Mathf.RoundToInt(vector2.y));
+    }
+
+    public static Vector2[] Combine(GestureSample[] gestureSamples)
+    {
+        int size = gestureSamples.Max(p => p.positions.Length);
+        for (int index = 0; index < gestureSamples.Length; index++)
+        {
+            GestureSample sample = gestureSamples[index];
+            gestureSamples[index] = sample.Resample(size);
+        }
+
+        Vector2[] results = new Vector2[size];
+        for (int i = 0; i < size; i++)
+        {
+            results[i] = GetAveragedPosition(gestureSamples, i);
+        }
+
+        return results.Distinct().ToArray();;
+    }
+
+    public static Vector2 GetAveragedPosition(GestureSample[] gestureSamples, int index)
+    {
+        Vector2 sum = Vector2.zero;
+        foreach (GestureSample sample in gestureSamples)
+        {
+            sum += sample.positions[index];
+        }
+
+        sum /= gestureSamples.Length;
+        return sum;
+    }
+
+    public static Vector2[] Expand(Vector2[] originals, int newSize)
+    {
+        Vector2[] resampled = new Vector2[newSize];
+        
+        for (int i = 0; i < newSize; i++)
+        {
+            float progress = i / (newSize - 1f);
+            resampled[i] = GetPositionAtProgress(originals, progress);
+        }
+
+        return resampled;
+    }
+
     public static Vector2Int[] GetQuantisedPositions(Vector2[] normPositions, int cellsPerDimension) {
 
         return normPositions.Select(normPos => {
@@ -90,7 +153,7 @@ public static class GestureDataUtilities
             return new Vector2Int(quantisedX, quantisedY);
         }).ToArray();
     }
-    
+
     public static Vector2[] GetNormalisedPositions(List<Vector2> positions, Bounds2D bounds, bool invertY, bool square)
     {
         if (square)
@@ -117,5 +180,47 @@ public static class GestureDataUtilities
 
             return new Vector2(normX, normY);
         }).ToArray();
+    }
+
+    public static Vector2Int[] FillCells(Vector2Int[] quantisedPositions)
+    {
+        int steps = 10;
+        List<Vector2Int> filled = new();
+        for (int index = 0; index < quantisedPositions.Length - 1; index++)
+        {
+            Vector2Int from = quantisedPositions[index];
+            Vector2Int to = quantisedPositions[index+1];
+            for (int lerpStepId = 0; lerpStepId <= 10; lerpStepId++)
+            {
+                float lerpVal = lerpStepId / (float)steps;
+                int xLerped = Mathf.RoundToInt(Mathf.Lerp(from.x, to.x, lerpVal));
+                int yLerped = Mathf.RoundToInt(Mathf.Lerp(from.y, to.y, lerpVal));
+                Vector2Int lerpedCoord = new(xLerped, yLerped);
+                filled.Add(lerpedCoord);
+            }
+        }
+
+        return filled.Distinct().ToArray();
+    }
+    
+    public static Bounds2D GetBounds(List<Vector2> positions)
+    {
+        Bounds2D bounds = new()
+        {
+            MinX = positions[0].x,
+            MinY = positions[0].y,
+            MaxX = positions[0].x,
+            MaxY = positions[0].y
+        };
+
+        foreach (Vector2 position in positions)
+        {
+            if (position.x < bounds.MinX) bounds.MinX = position.x;
+            if (position.y < bounds.MinY) bounds.MinY = position.y;
+            if (position.x > bounds.MaxX) bounds.MaxX = position.x;
+            if (position.y > bounds.MaxY) bounds.MaxY = position.y;
+        }
+
+        return bounds;
     }
 }
