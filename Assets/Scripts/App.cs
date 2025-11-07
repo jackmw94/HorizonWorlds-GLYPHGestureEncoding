@@ -1,4 +1,6 @@
-﻿public class App : SingletonMonoBehaviour<App>
+﻿using System;
+
+public class App : SingletonMonoBehaviour<App>
 {
     public Gesture ActiveGesture { get; set; } = null;
     
@@ -9,7 +11,7 @@
         
         if (gestureContainer.gestures.Count == 0)
         {
-            NewGesture.CreateNewGesture();
+            //NewGesture.CreateNewGesture(false);
         }
         else
         {

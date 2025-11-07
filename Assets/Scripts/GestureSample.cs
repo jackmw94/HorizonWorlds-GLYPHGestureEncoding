@@ -1,19 +1,31 @@
 ﻿using System;
-using System.Linq;
 using UnityEngine;
 
 [Serializable]
-public struct GestureSample
+public class GestureSample
 {
-    public Vector2Int[] positions;
-
-    public GestureSample(Vector2Int[] positions)
+    [SerializeField] public Vector2[] positions;
+    
+    public GestureSample(Vector2[] positions)
     {
         this.positions = positions;
     }
 
-    public void Resample(int newCount)
+    public GestureSample Resample(int newCount)
     {
-        positions = GestureDataUtilities.Expand(positions.Select(GestureDataUtilities.ToVector2).ToArray(), newCount).Select(GestureDataUtilities.ToVector2Int).ToArray();
+        Vector2[] expandedPoints = GestureDataUtilities.Expand(positions, newCount);
+        Debug.Assert(expandedPoints.Length == newCount);
+
+        return new GestureSample(expandedPoints);
+    }
+
+    public void InvertY()
+    {
+        for (int index = 0; index < positions.Length; index++)
+        {
+            Vector2 position = positions[index];
+            position.y = 1f - position.y;
+            positions[index] = position;
+        }
     }
 }

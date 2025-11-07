@@ -24,7 +24,7 @@ public class GestureView : MonoBehaviour
 
     private void OnClicked()
     {
-        AppView.Instance.ActiveGesture = cachedGesture;
+        App.Instance.ActiveGesture = cachedGesture;
     }
 
     public void Populate(Gesture gesture)
@@ -36,7 +36,7 @@ public class GestureView : MonoBehaviour
     {
         text.text = cachedGesture.gestureName;
         image.texture = cachedGesture.Texture;
-        selected.SetActive(cachedGesture == AppView.Instance.ActiveGesture);
+        selected.SetActive(cachedGesture == App.Instance.ActiveGesture);
     }
 
     private void Update()
