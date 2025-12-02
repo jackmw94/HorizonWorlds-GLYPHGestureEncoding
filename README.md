@@ -1,4 +1,4 @@
-![alt text](https://raw.githubusercontent.com/jackmw94/HorizonWorlds-GLYPHGestureEncoding/refs/heads/master/Assets/Textures/GLYPH_Long.png)
+![alt text](https://raw.githubusercontent.com/jackmw94/HorizonWorlds-GLYPHGestureEncoding/refs/heads/main/Assets/Textures/GLYPH_Long.png)
 
 Gesture creation tool for the GLYPH gesture system for Horizon Worlds, used to detect more complex gestures the player makes when in focus mode.
 
